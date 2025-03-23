@@ -1,0 +1,57 @@
+# ===== Entorno Virtual =====
+.venv/
+venv/
+
+# ===== Archivos Python temporales =====
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ===== Configuración de IDEs =====
+.vscode/
+.idea/
+
+# ===== Archivos de sistema =====
+.DS_Store
+Thumbs.db
+
+# ===== Archivos de base de datos SQLite =====
+*.sqlite3
+*.db
+*.db-journal
+
+# ===== Archivos de configuración locales =====
+*.env
+*.ini
+*.cfg
+
+# ===== Logs =====
+*.log
+
+# ===== PDFs y documentos generados =====
+*.pdf
+/resultados_pdf/
+
+# ===== Archivos Excel temporales =====
+*.xlsx
+*.xls
+
+# ===== Backups =====
+*.bak
+*.tmp
+
+# ===== Archivos de test/coverage =====
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+.cache
+pytest_cache/
+
+# ===== Archivos de empaquetado =====
+dist/
+build/
+*.egg-info/
+
+# ===== Excepción si quieres conservar README =====
+!README.md
