@@ -122,3 +122,31 @@ Editar
 source .venv/bin/activate
 👨‍💻 Autor
 Gian Lucas San Martin
+
+
+
+
+Comando	Función
+git init	Inicializar repo local
+
+git remote add origin <url>	Agregar remoto
+
+git remote set-url origin <url>	Cambiar remoto
+
+git add .	Agregar todos los cambios
+
+git commit -m "mensaje"	Guardar cambios localmente
+
+git push origin main	Subir cambios al remoto
+
+git pull origin main	Bajar cambios del remoto
+
+git checkout -b nombre-rama	Crear nueva rama
+
+git checkout nombre-rama	Cambiar de rama
+
+git branch	Ver ramas
+
+git remote -v	Ver URL del remoto
+
+git status	Ver estado actual
