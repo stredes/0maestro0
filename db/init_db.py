@@ -42,3 +42,44 @@ def init_pacientes_db():
 def init_db():
     init_usuarios_db()
     init_pacientes_db()
+
+
+
+    import sqlite3
+import os
+
+def init_db():
+    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database.db")
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS paciente (
+            codigo INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT,
+            rut TEXT
+        )
+    ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS examen (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo_paciente INTEGER,
+            codigo_barras TEXT,
+            examen TEXT,
+            resultado TEXT
+        )
+    ''')
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS validacion (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo_paciente INTEGER,
+            codigo_barras TEXT,
+            nombre_tecnologo TEXT,
+            rut_tecnologo TEXT,
+            fecha_validacion TEXT,
+            estado_rango TEXT
+        )
+    ''')

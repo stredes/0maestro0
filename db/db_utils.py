@@ -1,5 +1,9 @@
 import sqlite3
 from db.models import Usuario, Paciente, Examen
+from db import init_db, models
+import sqlite3
+import os
+from datetime import datetime
 
 # ----------- USUARIOS -----------
 
@@ -87,3 +91,39 @@ def guardar_examen_db(examen):
     )
     conn.commit()
     conn.close()
+
+# Guardar validación
+def guardar_validacion_db(codigo_paciente, codigo_barras, nombre_tecnologo, rut_tecnologo, estado_rango):
+    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database.db")
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    c.execute('''
+        INSERT INTO validacion (codigo_paciente, codigo_barras, nombre_tecnologo, rut_tecnologo, fecha_validacion, estado_rango)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (codigo_paciente, codigo_barras, nombre_tecnologo, rut_tecnologo, fecha, estado_rango))
+
+    conn.commit()
+    conn.close()
+
+
+
+def obtener_historial_paciente(criterio):
+    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database.db")
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    query = '''
+    SELECT e.codigo_barras, e.examen, e.resultado, v.estado_rango, v.fecha_validacion
+    FROM examen e
+    LEFT JOIN validacion v ON e.codigo_barras = v.codigo_barras
+    LEFT JOIN paciente p ON e.codigo_paciente = p.codigo
+    WHERE p.nombre LIKE ? OR p.rut LIKE ?
+    '''
+
+    like_criterio = f"%{criterio}%"
+    c.execute(query, (like_criterio, like_criterio))
+    results = c.fetchall()
+    conn.close()
+    return results
