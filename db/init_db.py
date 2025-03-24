@@ -1,51 +1,4 @@
 import sqlite3
-
-def init_usuarios_db():
-    conn = sqlite3.connect('usuarios.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY,
-            nombre TEXT,
-            email TEXT UNIQUE,
-            contraseña TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-def init_pacientes_db():
-    conn = sqlite3.connect('pacientes.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS pacientes (
-            codigo INTEGER PRIMARY KEY,
-            nombre TEXT,
-            rut TEXT,
-            fecha_nacimiento TEXT,
-            edad TEXT,
-            sexo TEXT
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS examenes (
-            codigo_barras TEXT PRIMARY KEY,
-            examen TEXT,
-            codigo_paciente INTEGER,
-            resultado TEXT,
-            FOREIGN KEY(codigo_paciente) REFERENCES pacientes(codigo)
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-def init_db():
-    init_usuarios_db()
-    init_pacientes_db()
-
-
-
-    import sqlite3
 import os
 
 def init_db():
@@ -53,33 +6,52 @@ def init_db():
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
-
+    # Crear tabla de usuarios
     c.execute('''
-        CREATE TABLE IF NOT EXISTS paciente (
-            codigo INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT,
-            rut TEXT
-        )
-    ''')
-
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS examen (
+        CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            codigo_paciente INTEGER,
-            codigo_barras TEXT,
-            examen TEXT,
-            resultado TEXT
+            nombre TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            contraseña TEXT NOT NULL
         )
     ''')
 
+    # Crear tabla de pacientes
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS pacientes (
+            codigo TEXT PRIMARY KEY,
+            nombre TEXT NOT NULL,
+            rut TEXT NOT NULL,
+            fecha_nacimiento TEXT,
+            edad INTEGER,
+            sexo TEXT
+        )
+    ''')
+
+    # Crear tabla de exámenes
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS examenes (
+            codigo_barras TEXT PRIMARY KEY,
+            examen TEXT,
+            codigo_paciente TEXT,
+            resultado TEXT,
+            FOREIGN KEY (codigo_paciente) REFERENCES pacientes (codigo)
+        )
+    ''')
+
+    # Crear tabla de validación
     c.execute('''
         CREATE TABLE IF NOT EXISTS validacion (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            codigo_paciente INTEGER,
+            codigo_paciente TEXT,
             codigo_barras TEXT,
             nombre_tecnologo TEXT,
             rut_tecnologo TEXT,
-            fecha_validacion TEXT,
-            estado_rango TEXT
+            estado_rango TEXT,
+            fecha_validacion TEXT
         )
     ''')
+
+    conn.commit()
+    conn.close()
+    print("✅ Base de datos inicializada correctamente.")

@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from db import db_utils
-from utils.pdf_utils import generar_informe_pdf  # ¡Import ahora funciona perfecto!
+from utils.pdf_utils import generar_resultado_pdf, imprimir_pdf  # <-- corregido, ahora usamos este import correctamente
 
 class HistorialGUI:
     def __init__(self, notebook):
@@ -71,5 +71,10 @@ class HistorialGUI:
             messagebox.showwarning("Exportar", "No hay datos para exportar.")
             return
 
-        generar_informe_pdf(historial_data)
-        messagebox.showinfo("Exportar", "Historial exportado correctamente.")
+        pdf_path = generar_resultado_pdf(historial_data)  # Corregido
+        messagebox.showinfo("Exportar", f"Historial exportado correctamente.\nArchivo: {pdf_path}")
+
+        # Preguntar si desea imprimir
+        respuesta = messagebox.askyesno("Imprimir", "¿Desea imprimir el PDF generado?")
+        if respuesta:
+            imprimir_pdf(pdf_path)
