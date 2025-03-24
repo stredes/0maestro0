@@ -23,3 +23,11 @@ class Examen:
         self.examen = examen
         self.codigo_paciente = codigo_paciente
         self.resultado = resultado
+class InsumoReactivo:
+    def __init__(self, id, nombre, lote, fecha_fabricacion, fecha_vencimiento, cantidad):
+        self.id = id
+        self.nombre = nombre
+        self.lote = lote
+        self.fecha_fabricacion = fecha_fabricacion
+        self.fecha_vencimiento = fecha_vencimiento
+        self.cantidad = cantidad

@@ -52,6 +52,18 @@ def init_db():
         )
     ''')
 
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS insumos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            lote TEXT NOT NULL,
+            fecha_fabricacion TEXT,
+            fecha_vencimiento TEXT,
+            cantidad INTEGER,
+            unidad TEXT
+        )
+    ''')
+
     conn.commit()
     conn.close()
     print("✅ Base de datos inicializada correctamente.")

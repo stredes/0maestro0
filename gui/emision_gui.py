@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from utils.pdf_utils import generar_resultado_lote_pdf
 from db import db_utils
+from utils.pdf_utils import generar_resultado_lote_pdf
+
 
 class EmisionLoteGUI:
     def __init__(self, notebook, pacientes_dict):

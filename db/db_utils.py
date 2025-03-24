@@ -127,3 +127,49 @@ def obtener_historial_paciente(criterio):
     results = c.fetchall()
     conn.close()
     return results
+
+import sqlite3
+import os
+from db.models import InsumoReactivo
+
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database.db")
+
+# --- Insertar nuevo insumo ---
+def agregar_insumo(nombre, lote, fecha_fabricacion, fecha_vencimiento, cantidad, unidad):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO insumos (nombre, lote, fecha_fabricacion, fecha_vencimiento, cantidad, unidad)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (nombre, lote, fecha_fabricacion, fecha_vencimiento, cantidad, unidad))
+    conn.commit()
+    conn.close()
+
+# --- Listar insumos ---
+def obtener_insumos():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM insumos')
+    rows = cursor.fetchall()
+    conn.close()
+    return [InsumoReactivo(*row) for row in rows]
+
+# --- Actualizar insumo ---
+def actualizar_insumo(id, nombre, lote, fecha_fabricacion, fecha_vencimiento, cantidad, unidad):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE insumos
+        SET nombre = ?, lote = ?, fecha_fabricacion = ?, fecha_vencimiento = ?, cantidad = ?, unidad = ?
+        WHERE id = ?
+    ''', (nombre, lote, fecha_fabricacion, fecha_vencimiento, cantidad, unidad, id))
+    conn.commit()
+    conn.close()
+
+# --- Eliminar insumo ---
+def eliminar_insumo(id):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM insumos WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()

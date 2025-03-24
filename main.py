@@ -18,7 +18,8 @@ from gui import (
     coneccion_gui,
     dashboard_gui,
     validacion_gui,
-    emision_gui
+    emision_gui,
+    insumos_gui
 )
 from utils import pdf_utils
 
@@ -57,12 +58,15 @@ def iniciar_app():
     # Historial
     historial_gui.HistorialGUI(notebook)
 
-    # Acerca de
-    about_gui.about_tab(notebook)
-
 
     #emicion # Emisión de resultadosemision_tab = emision_gui.EmisionLoteGUI(notebook, pacientes_dict)
     emision_tab = emision_gui.EmisionLoteGUI(notebook, pacientes_dict)
+
+    #insumos sotck
+    insumos_tab = insumos_gui.InsumosGUI(notebook)
+
+    # Acerca de
+    about_gui.about_tab(notebook)
 
 
 
