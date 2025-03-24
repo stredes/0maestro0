@@ -6,22 +6,24 @@ from utils.rut_utils import validar_rut
 from utils.utils_generales import obtener_codigo_paciente
 
 class PacienteGUI:
-    def __init__(self, notebook, pacientes_dict):
+    def __init__(self, parent, pacientes_dict):
         self.pacientes = pacientes_dict
         self.codigo_paciente_seleccionado = None
 
-        # Variables del formulario
+        # Variables formulario
         self.nombre_var = tk.StringVar()
         self.rut_var = tk.StringVar()
         self.fecha_nacimiento_var = tk.StringVar()
         self.edad_var = tk.StringVar()
         self.sexo_var = tk.StringVar()
 
-        self.frame = ttk.Frame(notebook)
-        notebook.add(self.frame, text="Registro de Pacientes")
+        self.frame = ttk.Frame(parent)
 
         self.formulario()
         self.lista_pacientes()
+        
+    def get_frame(self):
+        return self.frame
 
     def formulario(self):
         form = ttk.LabelFrame(self.frame, text="Datos del Paciente")
@@ -30,7 +32,7 @@ class PacienteGUI:
         ttk.Label(form, text="Nombre completo:").grid(column=0, row=0, padx=10, pady=5, sticky='w')
         ttk.Entry(form, textvariable=self.nombre_var, width=50).grid(column=1, row=0, padx=10, pady=5)
 
-        ttk.Label(form, text="Rut:").grid(column=0, row=1, padx=10, pady=5, sticky='w')
+        ttk.Label(form, text="RUT:").grid(column=0, row=1, padx=10, pady=5, sticky='w')
         ttk.Entry(form, textvariable=self.rut_var, width=50).grid(column=1, row=1, padx=10, pady=5)
 
         ttk.Label(form, text="Fecha de nacimiento:").grid(column=0, row=2, padx=10, pady=5, sticky='w')
@@ -78,14 +80,25 @@ class PacienteGUI:
         self.limpiar_formulario()
         messagebox.showinfo("Éxito", "Paciente guardado")
 
+        db_utils.registrar_accion("usuario_actual", "Registro Paciente", f"Paciente {nombre} registrado con código {codigo}.")
+
     def eliminar_paciente(self):
         try:
             seleccionado = self.lista.get(self.lista.curselection())
             codigo = int(seleccionado.split(" - ")[0])
+            paciente_nombre = self.pacientes[codigo].nombre
+
+            confirm = messagebox.askyesno("Confirmar", f"¿Seguro que deseas eliminar al paciente {paciente_nombre}?")
+            if not confirm:
+                return
+
             del self.pacientes[codigo]
             db_utils.eliminar_paciente_db(codigo)
             self.actualizar_lista()
-        except:
+            messagebox.showinfo("Éxito", "Paciente eliminado")
+
+            db_utils.registrar_accion("usuario_actual", "Eliminación Paciente", f"Paciente {paciente_nombre} (Código: {codigo}) eliminado.")
+        except Exception:
             messagebox.showerror("Error", "Selecciona un paciente")
 
     def editar_paciente(self):
@@ -111,6 +124,8 @@ class PacienteGUI:
         self.limpiar_formulario()
         messagebox.showinfo("Éxito", "Paciente actualizado")
 
+        db_utils.registrar_accion("usuario_actual", "Edición Paciente", f"Paciente {nuevo_nombre} (Código: {self.codigo_paciente_seleccionado}) editado.")
+
     def cargar_datos_paciente_seleccionado(self):
         try:
             seleccionado = self.lista.get(self.lista.curselection())
@@ -122,7 +137,7 @@ class PacienteGUI:
             self.fecha_nacimiento_var.set(paciente.fecha_nacimiento)
             self.edad_var.set(paciente.edad)
             self.sexo_var.set(paciente.sexo)
-        except:
+        except Exception:
             messagebox.showerror("Error", "Selecciona un paciente")
 
     def limpiar_formulario(self):

@@ -1,38 +1,46 @@
 import sqlite3
-from db.models import Usuario, Paciente, Examen
-from db import init_db, models
-import sqlite3
-import os
+from db.models import Usuario, Paciente, Examen, InsumoReactivo
+from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
+import os
+
+# Definir la ruta de la base de datos
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database.db")
 
 # ----------- USUARIOS -----------
 
-def insertar_usuario(nombre, email, contraseña):
-    conn = sqlite3.connect('usuarios.db')
+# Insertar nuevo usuario
+def insertar_usuario(nombre, email, contraseña, rol="Técnico de Laboratorio"):
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO usuarios (nombre, email, contraseña) VALUES (?, ?, ?)", (nombre, email, contraseña))
+        password_hash = generate_password_hash(contraseña)
+        cursor.execute("INSERT INTO usuarios (nombre, email, contraseña, rol) VALUES (?, ?, ?, ?)",
+                       (nombre, email, password_hash, rol))
         conn.commit()
+        conn.close()
         return True
     except sqlite3.IntegrityError:
-        return False
-    finally:
         conn.close()
+        return False
 
+# Validar usuario (login)
 def validar_usuario(email, contraseña):
-    conn = sqlite3.connect('usuarios.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM usuarios WHERE email = ? AND contraseña = ?", (email, contraseña))
-    user = cursor.fetchone()
+    cursor.execute("SELECT * FROM usuarios WHERE email=?", (email,))
+    usuario = cursor.fetchone()
     conn.close()
-    if user:
-        return Usuario(*user)
+    
+    if usuario and check_password_hash(usuario[2], contraseña):  # Verifica la contraseña
+        return Usuario(*usuario)  # Devuelve el objeto Usuario
     return None
 
 # ----------- PACIENTES -----------
 
+# Guardar paciente en la base de datos
 def guardar_paciente_db(paciente):
-    conn = sqlite3.connect('pacientes.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO pacientes (codigo, nombre, rut, fecha_nacimiento, edad, sexo) VALUES (?, ?, ?, ?, ?, ?)",
@@ -41,8 +49,9 @@ def guardar_paciente_db(paciente):
     conn.commit()
     conn.close()
 
+# Actualizar datos de un paciente
 def actualizar_paciente_db(paciente):
-    conn = sqlite3.connect('pacientes.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(
         "UPDATE pacientes SET nombre=?, rut=?, fecha_nacimiento=?, edad=?, sexo=? WHERE codigo=?",
@@ -51,16 +60,18 @@ def actualizar_paciente_db(paciente):
     conn.commit()
     conn.close()
 
+# Eliminar paciente de la base de datos
 def eliminar_paciente_db(codigo_paciente):
-    conn = sqlite3.connect('pacientes.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("DELETE FROM pacientes WHERE codigo=?", (codigo_paciente,))
     cursor.execute("DELETE FROM examenes WHERE codigo_paciente=?", (codigo_paciente,))
     conn.commit()
     conn.close()
 
+# Cargar pacientes y sus exámenes
 def cargar_pacientes_db():
-    conn = sqlite3.connect('pacientes.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     pacientes = {}
 
@@ -82,8 +93,9 @@ def cargar_pacientes_db():
 
 # ----------- EXÁMENES -----------
 
+# Guardar examen
 def guardar_examen_db(examen):
-    conn = sqlite3.connect('pacientes.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO examenes (codigo_barras, examen, codigo_paciente, resultado) VALUES (?, ?, ?, ?)",
@@ -92,10 +104,11 @@ def guardar_examen_db(examen):
     conn.commit()
     conn.close()
 
-# Guardar validación
+# ----------- VALIDACIÓN -----------
+
+# Guardar validación de examen
 def guardar_validacion_db(codigo_paciente, codigo_barras, nombre_tecnologo, rut_tecnologo, estado_rango):
-    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database.db")
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -107,34 +120,35 @@ def guardar_validacion_db(codigo_paciente, codigo_barras, nombre_tecnologo, rut_
     conn.commit()
     conn.close()
 
+# ----------- HISTORIAL DE ACCIONES -----------
 
+# Registrar acción en historial
+def registrar_accion(usuario, tipo_accion, descripcion):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def obtener_historial_paciente(criterio):
-    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database.db")
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
+    cursor.execute('''
+        INSERT INTO historial_acciones (usuario, fecha_hora, tipo_accion, descripcion)
+        VALUES (?, ?, ?, ?)
+    ''', (usuario, fecha_hora, tipo_accion, descripcion))
 
-    query = '''
-    SELECT e.codigo_barras, e.examen, e.resultado, v.estado_rango, v.fecha_validacion
-    FROM examen e
-    LEFT JOIN validacion v ON e.codigo_barras = v.codigo_barras
-    LEFT JOIN paciente p ON e.codigo_paciente = p.codigo
-    WHERE p.nombre LIKE ? OR p.rut LIKE ?
-    '''
-
-    like_criterio = f"%{criterio}%"
-    c.execute(query, (like_criterio, like_criterio))
-    results = c.fetchall()
+    conn.commit()
     conn.close()
-    return results
 
-import sqlite3
-import os
-from db.models import InsumoReactivo
+# Obtener historial completo de acciones
+def obtener_historial_acciones():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database.db")
+    cursor.execute('SELECT * FROM historial_acciones ORDER BY fecha_hora DESC')
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
 
-# --- Insertar nuevo insumo ---
+# ----------- INSUMOS -----------
+
+# Insertar nuevo insumo
 def agregar_insumo(nombre, lote, fecha_fabricacion, fecha_vencimiento, cantidad, unidad):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -145,7 +159,7 @@ def agregar_insumo(nombre, lote, fecha_fabricacion, fecha_vencimiento, cantidad,
     conn.commit()
     conn.close()
 
-# --- Listar insumos ---
+# Listar insumos
 def obtener_insumos():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -154,7 +168,7 @@ def obtener_insumos():
     conn.close()
     return [InsumoReactivo(*row) for row in rows]
 
-# --- Actualizar insumo ---
+# Actualizar insumo
 def actualizar_insumo(id, nombre, lote, fecha_fabricacion, fecha_vencimiento, cantidad, unidad):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -166,10 +180,17 @@ def actualizar_insumo(id, nombre, lote, fecha_fabricacion, fecha_vencimiento, ca
     conn.commit()
     conn.close()
 
-# --- Eliminar insumo ---
+# Eliminar insumo
 def eliminar_insumo(id):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('DELETE FROM insumos WHERE id = ?', (id,))
     conn.commit()
     conn.close()
+
+# ----------- CONEXIÓN A LA BASE DE DATOS -----------
+
+def conectar_db():
+    conn = sqlite3.connect(DB_PATH)  # Cambia esto por el path correcto de tu base de datos
+    return conn.cursor(), conn
+

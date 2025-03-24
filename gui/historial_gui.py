@@ -6,13 +6,15 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from db import db_utils
-from utils.pdf_utils import generar_resultado_pdf, imprimir_pdf  # <-- corregido, ahora usamos este import correctamente
+from utils.pdf_utils import generar_resultado_pdf, imprimir_pdf  # Import correcto
 
 class HistorialGUI:
-    def __init__(self, notebook):
-        self.frame = ttk.Frame(notebook)
-        notebook.add(self.frame, text="Historial Paciente")
+    def __init__(self, parent):
+        self.frame = ttk.Frame(parent)
         self.build_interface()
+        
+    def get_frame(self):
+        return self.frame
 
     def build_interface(self):
         # --- Buscador ---
@@ -33,11 +35,9 @@ class HistorialGUI:
         columns = ("codigo", "examen", "resultado", "estado", "fecha")
         self.tree = ttk.Treeview(table_frame, columns=columns, show="headings")
 
-        self.tree.heading("codigo", text="Código Examen")
-        self.tree.heading("examen", text="Examen")
-        self.tree.heading("resultado", text="Resultado")
-        self.tree.heading("estado", text="Estado Validación")
-        self.tree.heading("fecha", text="Fecha Validación")
+        for col in columns:
+            self.tree.heading(col, text=col.title().replace("_", " "))
+            self.tree.column(col, anchor='center')
 
         self.tree.pack(fill="both", expand=True)
 
@@ -71,10 +71,9 @@ class HistorialGUI:
             messagebox.showwarning("Exportar", "No hay datos para exportar.")
             return
 
-        pdf_path = generar_resultado_pdf(historial_data)  # Corregido
+        pdf_path = generar_resultado_pdf(historial_data)
         messagebox.showinfo("Exportar", f"Historial exportado correctamente.\nArchivo: {pdf_path}")
 
         # Preguntar si desea imprimir
-        respuesta = messagebox.askyesno("Imprimir", "¿Desea imprimir el PDF generado?")
-        if respuesta:
+        if messagebox.askyesno("Imprimir", "¿Desea imprimir el PDF generado?"):
             imprimir_pdf(pdf_path)

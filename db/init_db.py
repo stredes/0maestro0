@@ -63,6 +63,24 @@ def init_db():
             unidad TEXT
         )
     ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS historial_acciones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT NOT NULL,
+            fecha_hora TEXT NOT NULL,
+            tipo_accion TEXT NOT NULL,
+            descripcion TEXT NOT NULL
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            contraseña TEXT NOT NULL,
+            rol TEXT NOT NULL  -- Aquí agregamos el rol
+        )
+    ''')
 
     conn.commit()
     conn.close()

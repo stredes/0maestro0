@@ -3,12 +3,13 @@ from tkinter import ttk, messagebox
 from db import db_utils
 
 class InsumosGUI:
-    def __init__(self, notebook):
-        self.frame = ttk.Frame(notebook)
-        notebook.add(self.frame, text="Gestión de Insumos")
-
+    def __init__(self, parent):
+        self.frame = ttk.Frame(parent)
         self.build_interface()
         self.cargar_insumos()
+    
+    def get_frame(self):
+        return self.frame
 
     def build_interface(self):
         # --- Tabla ---
@@ -16,6 +17,7 @@ class InsumosGUI:
         self.tree = ttk.Treeview(self.frame, columns=columns, show="headings")
         for col in columns:
             self.tree.heading(col, text=col)
+            self.tree.column(col, anchor='center')
         self.tree.pack(fill="both", expand=True, padx=10, pady=10)
 
         # --- Botones ---
@@ -27,12 +29,16 @@ class InsumosGUI:
         ttk.Button(btn_frame, text="Eliminar Insumo", command=self.eliminar_insumo).grid(row=0, column=2, padx=5)
 
     def cargar_insumos(self):
+        # Limpiar tabla
         for i in self.tree.get_children():
             self.tree.delete(i)
 
         insumos = db_utils.obtener_insumos()
         for insumo in insumos:
-            self.tree.insert("", tk.END, values=(insumo.id, insumo.nombre, insumo.lote, insumo.fecha_fabricacion, insumo.fecha_vencimiento, insumo.cantidad, insumo.unidad))
+            self.tree.insert(
+                "", tk.END, 
+                values=(insumo.id, insumo.nombre, insumo.lote, insumo.fecha_fabricacion, insumo.fecha_vencimiento, insumo.cantidad, insumo.unidad)
+            )
 
     def agregar_insumo(self):
         self.abrir_ventana_insumo("Agregar")
@@ -51,19 +57,21 @@ class InsumosGUI:
             messagebox.showwarning("Advertencia", "Seleccione un insumo para eliminar.")
             return
         id_insumo = self.tree.item(selected[0])["values"][0]
-        db_utils.eliminar_insumo(id_insumo)
-        messagebox.showinfo("Eliminado", "Insumo eliminado correctamente.")
-        self.cargar_insumos()
+        if messagebox.askyesno("Confirmación", "¿Está seguro de eliminar este insumo?"):
+            db_utils.eliminar_insumo(id_insumo)
+            messagebox.showinfo("Eliminado", "Insumo eliminado correctamente.")
+            self.cargar_insumos()
 
     def abrir_ventana_insumo(self, accion, datos=None):
         ventana = tk.Toplevel()
         ventana.title(f"{accion} Insumo")
+        ventana.grab_set()
 
         labels = ["Nombre", "Lote", "Fabricación", "Vencimiento", "Cantidad", "Unidad"]
         entries = []
 
         for i, label in enumerate(labels):
-            ttk.Label(ventana, text=label).grid(row=i, column=0, padx=10, pady=5)
+            ttk.Label(ventana, text=label).grid(row=i, column=0, padx=10, pady=5, sticky="e")
             entry = ttk.Entry(ventana)
             entry.grid(row=i, column=1, padx=10, pady=5)
             entries.append(entry)
@@ -89,4 +97,3 @@ class InsumosGUI:
             self.cargar_insumos()
 
         ttk.Button(ventana, text="Guardar", command=guardar).grid(row=len(labels), columnspan=2, pady=10)
-

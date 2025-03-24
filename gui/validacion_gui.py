@@ -1,21 +1,21 @@
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 from db import db_utils
-from datetime import datetime
 
 class ValidacionGUI:
-    def __init__(self, notebook, pacientes_dict):
+    def __init__(self, parent, pacientes_dict):
         self.pacientes = pacientes_dict
-        self.frame = ttk.Frame(notebook)
-        notebook.add(self.frame, text="Validación de Muestras")
+        self.frame = ttk.Frame(parent)
 
         self.tecnologo_nombre = None
         self.tecnologo_rut = None
         self.checkbox_vars = {}
 
-        # Pedir datos tecnólogo solo una vez
         self.solicitar_datos_tecnologo()
         self.build_interface()
+        
+    def get_frame(self):
+        return self.frame
 
     def solicitar_datos_tecnologo(self):
         while not self.tecnologo_nombre or not self.tecnologo_rut:
@@ -40,13 +40,14 @@ class ValidacionGUI:
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=canvas.yview)
         self.inner_frame = ttk.Frame(canvas)
 
-        self.inner_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-
+        # Vincular scroll
         canvas.create_window((0, 0), window=self.inner_frame, anchor='nw')
         canvas.configure(yscrollcommand=scrollbar.set)
+
+        def on_frame_config(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        self.inner_frame.bind("<Configure>", on_frame_config)
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
@@ -72,9 +73,8 @@ class ValidacionGUI:
     def es_resultado_normal(self, resultado):
         try:
             valor = float(resultado)
-            # Ejemplo: normal si entre 10 y 100
             return 10 <= valor <= 100
-        except:
+        except ValueError:
             return False
 
     def guardar_validaciones(self):
@@ -89,8 +89,15 @@ class ValidacionGUI:
             messagebox.showwarning("Sin selección", "No has validado ninguna muestra.")
             return
 
+        confirmar = messagebox.askyesno("Confirmación", "¿Deseas guardar las validaciones seleccionadas?")
+        if not confirmar:
+            return
+
         for codigo_paciente, codigo_barras in validaciones:
-            paciente = self.pacientes[codigo_paciente]
+            paciente = self.pacientes.get(codigo_paciente)
+            if not paciente:
+                continue  # Si el paciente ya no existe, lo saltamos
+
             examen_obj = next((e for e in paciente.examenes if e.codigo_barras == codigo_barras), None)
 
             if examen_obj:
@@ -98,12 +105,20 @@ class ValidacionGUI:
                 if estado_rango == "FUERA_DE_RANGO":
                     fuera_rango += 1
 
+                # Guardar validación
                 db_utils.guardar_validacion_db(
                     codigo_paciente,
                     codigo_barras,
                     self.tecnologo_nombre,
                     self.tecnologo_rut,
                     estado_rango
+                )
+
+                # Registrar acción
+                db_utils.registrar_accion(
+                    self.tecnologo_nombre,
+                    "Validación Examen",
+                    f"Validado el examen {examen_obj.examen} para paciente {paciente.nombre} (Estado: {estado_rango})."
                 )
 
         resumen = f"Total muestras validadas: {len(validaciones)}\nFuera de rango: {fuera_rango}"

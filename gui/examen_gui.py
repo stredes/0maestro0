@@ -6,20 +6,23 @@ from utils.excel_utils import cargar_listado_examenes_desde_excel
 from utils.barcode_utils import generar_codigo_barras
 
 class ExamenGUI:
-    def __init__(self, notebook, pacientes_dict):
+    def __init__(self, parent, pacientes_dict, usuario_actual="Desconocido"):
         self.pacientes = pacientes_dict
+        self.usuario_actual = usuario_actual
         self.examen_var = tk.StringVar()
         self.resultado_var = tk.StringVar()
         self.buscar_examen_var = tk.StringVar()
 
-        self.frame = ttk.Frame(notebook)
-        notebook.add(self.frame, text="Registro de Exámenes")
+        self.frame = ttk.Frame(parent)
 
         # Cargar listado de exámenes
         self.examenes_disponibles = cargar_listado_examenes_desde_excel()
 
         self.formulario()
         self.lista_examenes()
+
+    def get_frame(self):
+        return self.frame
 
     def formulario(self):
         form = ttk.LabelFrame(self.frame, text="Agregar Exámenes")
@@ -59,8 +62,8 @@ class ExamenGUI:
         self.lista_pacientes_cb['values'] = self.obtener_lista_pacientes()
 
     def filtrar_examenes(self, event):
-        busqueda = self.buscar_examen_var.get().strip().lower()[:4]
-        filtrados = [ex for ex in self.examenes_disponibles if busqueda in ex[1].strip().lower()]
+        busqueda = self.buscar_examen_var.get().strip().lower()
+        filtrados = [ex for ex in self.examenes_disponibles if busqueda in ex.lower()]
         self.examen_cb['values'] = filtrados
 
     def agregar_examen(self):
@@ -69,16 +72,25 @@ class ExamenGUI:
         resultado = self.resultado_var.get()
 
         if paciente_sel and examen:
-            codigo_paciente = int(paciente_sel.split(" - ")[0])
-            codigo_barras = generar_codigo_barras()
+            try:
+                codigo_paciente = int(paciente_sel.split(" - ")[0])
+                paciente = self.pacientes[codigo_paciente]
+                codigo_barras = generar_codigo_barras()
 
-            examen_obj = Examen(codigo_barras, examen, codigo_paciente, resultado)
-            self.pacientes[codigo_paciente].examenes.append(examen_obj)
-            db_utils.guardar_examen_db(examen_obj)
+                examen_obj = Examen(codigo_barras, examen, codigo_paciente, resultado)
+                paciente.examenes.append(examen_obj)
+                db_utils.guardar_examen_db(examen_obj)
 
-            self.actualizar_lista_examenes(codigo_paciente)
-            self.examen_var.set('')
-            self.resultado_var.set('')
+                self.actualizar_lista_examenes(codigo_paciente)
+                self.examen_var.set('')
+                self.resultado_var.set('')
+                messagebox.showinfo("Éxito", "Examen registrado")
+
+                # --- Registrar acción en historial ---
+                db_utils.registrar_accion(self.usuario_actual, "Registro Examen", f"Examen {examen} registrado para paciente {paciente.nombre} (Código: {paciente.codigo}).")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al agregar examen: {e}")
         else:
             messagebox.showerror("Error", "Debe seleccionar paciente y examen")
 
@@ -89,8 +101,21 @@ class ExamenGUI:
 
     def eliminar_examen(self):
         try:
-            seleccionado = self.lista.curselection()
-            self.lista.delete(seleccionado)
-            messagebox.showinfo("Examen eliminado", "Solo eliminado visualmente, (opcionalmente puedes agregar lógica para eliminarlo de BD)")
-        except:
-            messagebox.showerror("Error", "Selecciona un examen")
+            seleccionado_idx = self.lista.curselection()
+            if not seleccionado_idx:
+                raise Exception("Selecciona un examen para eliminar.")
+            
+            seleccionado = self.lista.get(seleccionado_idx)
+            self.lista.delete(seleccionado_idx)
+
+            # --- Registrar acción en historial ---
+            db_utils.registrar_accion(
+                self.usuario_actual, 
+                "Eliminación Examen", 
+                f"Examen eliminado visualmente: {seleccionado}."
+            )
+
+            messagebox.showinfo("Examen eliminado", "Examen eliminado visualmente.")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))

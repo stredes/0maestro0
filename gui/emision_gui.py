@@ -3,15 +3,17 @@ from tkinter import ttk, messagebox
 from db import db_utils
 from utils.pdf_utils import generar_resultado_lote_pdf
 
-
 class EmisionLoteGUI:
-    def __init__(self, notebook, pacientes_dict):
+    def __init__(self, parent, pacientes_dict, usuario_actual="Desconocido"):
         self.pacientes = pacientes_dict
-        self.frame = ttk.Frame(notebook)
-        notebook.add(self.frame, text="Emisión Resultados Lote")
+        self.usuario_actual = usuario_actual  # <-- Usuario que emite los resultados
+        self.frame = ttk.Frame(parent)
 
         self.seleccionados = {}
         self.build_interface()
+
+    def get_frame(self):
+        return self.frame
 
     def build_interface(self):
         # --- Tabla Pacientes ---
@@ -29,7 +31,7 @@ class EmisionLoteGUI:
 
         self.tree.pack(fill="both", expand=True)
 
-        # --- Checkboxes por fila ---
+        # --- Insertar pacientes ---
         for codigo, paciente in self.pacientes.items():
             self.tree.insert("", tk.END, iid=codigo, values=(paciente.codigo, paciente.nombre, paciente.rut, paciente.edad, paciente.sexo))
             self.seleccionados[codigo] = tk.BooleanVar()
@@ -56,4 +58,13 @@ class EmisionLoteGUI:
 
         # --- Generar PDF Lote ---
         generar_resultado_lote_pdf(pacientes_a_emitir)
+
+        # --- Registrar historial por cada paciente ---
+        for paciente in pacientes_a_emitir:
+            db_utils.registrar_accion(
+                self.usuario_actual,
+                "Emisión Resultado Lote",
+                f"Resultados emitidos por lote para paciente {paciente.nombre} (Código: {paciente.codigo})."
+            )
+
         messagebox.showinfo("Emisión completada", "Se generaron los resultados en PDF correctamente.")

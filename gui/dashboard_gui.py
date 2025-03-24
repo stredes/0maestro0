@@ -2,10 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 
 class DashboardGUI:
-    def __init__(self, notebook, pacientes_dict):
+    def __init__(self, parent, pacientes_dict):
         self.pacientes = pacientes_dict
-        self.frame = ttk.Frame(notebook)
-        notebook.add(self.frame, text="Dashboard Procesos de Muestras")
+        self.frame = ttk.Frame(parent)
 
         self.total_muestras = tk.IntVar()
         self.procesadas = tk.IntVar()
@@ -14,6 +13,9 @@ class DashboardGUI:
         self.build_interface()
         self.actualizar_dashboard()
 
+    def get_frame(self):
+        return self.frame
+    
     def build_interface(self):
         # Estadísticas resumen
         stats_frame = ttk.LabelFrame(self.frame, text="Resumen")
@@ -53,9 +55,10 @@ class DashboardGUI:
         # Llenar con datos actuales
         for codigo, paciente in self.pacientes.items():
             for examen in paciente.examenes:
-                estado = "Pendiente"  # Por defecto
+                # Aquí deberías traer el estado real (procesado o pendiente) si lo guardas en BD
+                estado = "Pendiente"
                 total += 1
-                pendientes += 1  # Actualmente todas las muestras estarán pendientes
+                pendientes += 1
 
                 self.tree.insert("", tk.END, values=(codigo, paciente.nombre, examen.examen, estado))
 
