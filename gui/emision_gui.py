@@ -1,70 +1,58 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from utils.pdf_utils import generar_resultado_lote_pdf
 from db import db_utils
-from utils.pdf_utils import generar_resultado_pdf, imprimir_pdf
 
-class EmisionGUI:
+class EmisionLoteGUI:
     def __init__(self, notebook, pacientes_dict):
         self.pacientes = pacientes_dict
         self.frame = ttk.Frame(notebook)
-        notebook.add(self.frame, text="Emisión Resultados")
+        notebook.add(self.frame, text="Emisión Resultados Lote")
 
+        self.seleccionados = {}
         self.build_interface()
 
     def build_interface(self):
-        ttk.Label(self.frame, text="Seleccione paciente para emitir resultados", font=("Arial", 12)).pack(pady=10)
+        # --- Tabla Pacientes ---
+        table_frame = ttk.LabelFrame(self.frame, text="Pacientes disponibles")
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # --- Lista desplegable de pacientes ---
-        pacientes_nombres = [f"{p.codigo} - {p.nombre}" for p in self.pacientes.values()]
-        self.paciente_var = tk.StringVar()
-        self.combo = ttk.Combobox(self.frame, values=pacientes_nombres, textvariable=self.paciente_var, width=40)
-        self.combo.pack(pady=10)
+        columns = ("codigo", "nombre", "rut", "edad", "sexo")
+        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", selectmode="extended")
 
-        # Botones
-        btn_frame = ttk.Frame(self.frame)
-        btn_frame.pack(pady=10)
+        self.tree.heading("codigo", text="Código")
+        self.tree.heading("nombre", text="Nombre")
+        self.tree.heading("rut", text="RUT")
+        self.tree.heading("edad", text="Edad")
+        self.tree.heading("sexo", text="Sexo")
 
-        generar_btn = ttk.Button(btn_frame, text="Generar PDF", command=self.generar_pdf)
-        generar_btn.grid(row=0, column=0, padx=5)
+        self.tree.pack(fill="both", expand=True)
 
-        imprimir_btn = ttk.Button(btn_frame, text="Imprimir", command=self.imprimir_pdf)
-        imprimir_btn.grid(row=0, column=1, padx=5)
+        # --- Checkboxes por fila ---
+        for codigo, paciente in self.pacientes.items():
+            self.tree.insert("", tk.END, iid=codigo, values=(paciente.codigo, paciente.nombre, paciente.rut, paciente.edad, paciente.sexo))
+            self.seleccionados[codigo] = tk.BooleanVar()
 
-        self.ultimo_pdf = None
+        # --- Botón emitir lote ---
+        emitir_btn = ttk.Button(self.frame, text="Emitir Resultados Lote", command=self.emitir_resultados)
+        emitir_btn.pack(pady=10)
 
-    def generar_pdf(self):
-        seleccion = self.paciente_var.get()
+    def emitir_resultados(self):
+        seleccion = self.tree.selection()
         if not seleccion:
-            messagebox.showwarning("Atención", "Seleccione un paciente.")
+            messagebox.showwarning("Emisión", "Debe seleccionar al menos un paciente.")
             return
 
-        codigo = seleccion.split(" - ")[0]
-        paciente = self.pacientes.get(codigo)
+        pacientes_a_emitir = []
+        for codigo in seleccion:
+            paciente = self.pacientes.get(codigo)
+            if paciente:
+                pacientes_a_emitir.append(paciente)
 
-        if not paciente or not paciente.examenes:
-            messagebox.showinfo("Sin datos", "Este paciente no tiene exámenes registrados.")
+        if not pacientes_a_emitir:
+            messagebox.showwarning("Emisión", "No se encontraron pacientes seleccionados.")
             return
 
-        # Preparamos datos para PDF
-        historial_data = []
-        for examen in paciente.examenes:
-            historial_data.append([
-                examen.codigo_barras,
-                examen.examen,
-                examen.resultado,
-                "-",  # Estado (puedes agregar estado si lo tienes)
-                "-"   # Fecha (puedes agregar fecha si lo tienes)
-            ])
-
-        # Generamos PDF
-        pdf_path = generar_resultado_pdf(historial_data)
-        self.ultimo_pdf = pdf_path
-        messagebox.showinfo("Éxito", f"PDF generado en: {pdf_path}")
-
-    def imprimir_pdf(self):
-        if not self.ultimo_pdf:
-            messagebox.showwarning("Atención", "Primero debe generar el PDF.")
-            return
-
-        imprimir_pdf(self.ultimo_pdf)
-        messagebox.showinfo("Impresión", "PDF enviado a impresión correctamente.")
+        # --- Generar PDF Lote ---
+        generar_resultado_lote_pdf(pacientes_a_emitir)
+        messagebox.showinfo("Emisión completada", "Se generaron los resultados en PDF correctamente.")

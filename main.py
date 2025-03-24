@@ -60,9 +60,10 @@ def iniciar_app():
     # Acerca de
     about_gui.about_tab(notebook)
 
-    
-    #emicion # Emisión de resultados
-    emision_tab = emision_gui.EmisionGUI(notebook, pacientes_dict)
+
+    #emicion # Emisión de resultadosemision_tab = emision_gui.EmisionLoteGUI(notebook, pacientes_dict)
+    emision_tab = emision_gui.EmisionLoteGUI(notebook, pacientes_dict)
+
 
 
 
