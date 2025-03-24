@@ -1,11 +1,13 @@
 # Modelos de datos en Python para reflejar las tablas de la base de datos
 
 class Usuario:
-    def __init__(self, id, nombre, email, contraseña):
+    def __init__(self, id, nombre, email, contraseña, rol):
         self.id = id
         self.nombre = nombre
         self.email = email
         self.contraseña = contraseña
+        self.rol = rol
+
 
 class Paciente:
     def __init__(self, codigo, nombre, rut, fecha_nacimiento, edad, sexo):

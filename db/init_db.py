@@ -12,7 +12,8 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
-            contraseña TEXT NOT NULL
+            contraseña TEXT NOT NULL,
+            rol TEXT
         )
     ''')
 
@@ -52,6 +53,7 @@ def init_db():
         )
     ''')
 
+    # Crear tabla de insumos
     c.execute('''
         CREATE TABLE IF NOT EXISTS insumos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,6 +65,8 @@ def init_db():
             unidad TEXT
         )
     ''')
+
+    # Crear tabla de historial de acciones
     c.execute('''
         CREATE TABLE IF NOT EXISTS historial_acciones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,15 +74,6 @@ def init_db():
             fecha_hora TEXT NOT NULL,
             tipo_accion TEXT NOT NULL,
             descripcion TEXT NOT NULL
-        )
-    ''')
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            contraseña TEXT NOT NULL,
-            rol TEXT NOT NULL  -- Aquí agregamos el rol
         )
     ''')
 
