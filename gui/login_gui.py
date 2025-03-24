@@ -25,13 +25,13 @@ def login_window(main_callback):
             messagebox.showerror("Error", "Ingrese Email y Contraseña.")
             return
 
+        # Validar usuario
         usuario = db_utils.validar_usuario(email, password)
         if usuario:
-            # Registramos en historial
             db_utils.registrar_accion(email, "Login", "Inicio de sesión exitoso.")
-            messagebox.showinfo("Bienvenido", f"Hola {usuario.nombre}")  # usuario.nombre es el nombre del usuario
+            messagebox.showinfo("Bienvenido", f"Hola {usuario[1]}")  # usuario[1] = nombre
             root.destroy()
-            main_callback()
+            main_callback(usuario)  # Pasa el objeto completo, no solo el rol
         else:
             messagebox.showerror("Error", "Credenciales incorrectas.")
 
@@ -54,7 +54,7 @@ def login_window(main_callback):
 
         tk.Label(top, text='Rol:').grid(row=3, column=0, padx=10, pady=5)
         rol_var = tk.StringVar()
-        roles = ['Administrador', 'Tecnólogo', 'Técnico de Laboratorio', 'Paciente']
+        roles = ['Administrador', 'Tecnólogo Médico', 'Técnico de Laboratorio', 'Paciente']
         rol_combobox = ttk.Combobox(top, textvariable=rol_var, values=roles, state='readonly')
         rol_combobox.grid(row=3, column=1, padx=10, pady=5)
         rol_combobox.current(0)  # Valor por defecto

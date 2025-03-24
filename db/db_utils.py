@@ -40,9 +40,9 @@ def validar_usuario(email, contraseña):
     if usuario:
         hashed_password = usuario[3]
         if check_password_hash(hashed_password, contraseña):
-            # Devuelve un objeto Usuario
-            return Usuario(usuario[0], usuario[1], usuario[2], usuario[3], usuario[4])
+            return usuario  # Retorna toda la tupla, incluyendo rol
     return None
+
 
 
 

@@ -1,78 +1,92 @@
 import tkinter as tk
-from tkinter import ttk
-from db.init_db import init_db
-from db import db_utils
+from tkinter import ttk, messagebox
 from gui import (
-    login_gui, paciente_gui, examen_gui, listado_gui, about_gui,
-    historial_gui, coneccion_gui, dashboard_gui, validacion_gui,
-    historial_acciones_gui, insumos_gui, emision_gui
+    dashboard_gui,
+    paciente_gui,
+    examen_gui,
+    insumos_gui,
+    validacion_gui,
+    historial_gui,
+    historial_acciones_gui,
+    listado_gui,
+    coneccion_gui,
+    emision_gui,
+    about_gui,
+    login_gui
 )
+from db import db_utils
 
-# Definir colores para el modo oscuro
-modo_oscuro = {
-    'bg': '#2c3e50',
-    'fg': '#ecf0f1',
-    'button_bg': '#34495e',
-    'button_fg': 'white',
-    'label_bg': '#2c3e50',
-    'label_fg': 'white',
-}
-
-# Definir colores para el modo claro
+# Definir temas
 modo_claro = {
-    'bg': '#ecf0f1',
-    'fg': '#2c3e50',
-    'button_bg': '#3498db',
-    'button_fg': 'white',
-    'label_bg': '#ecf0f1',
-    'label_fg': '#2c3e50',
+    'bg': '#f0f0f0',
+    'fg': '#000000',
+    'button_bg': '#ffffff',
+    'button_fg': '#000000'
 }
 
-# --- Inicializar BD ---
-init_db()
+modo_oscuro = {
+    'bg': '#2e2e2e',
+    'fg': '#ffffff',
+    'button_bg': '#444444',
+    'button_fg': '#ffffff'
+}
 
 class App:
-    def __init__(self):
-        self.tema = modo_claro  # Por defecto modo claro
+    def __init__(self, usuario):
+        self.usuario = usuario
+        self.rol_usuario = usuario[4]
+        self.tema = modo_claro
         self.pacientes_dict = db_utils.cargar_pacientes_db()
-        
+
         self.root = tk.Tk()
-        self.root.title("Sistema R.P.E.D - Gestión Clínica")
+        self.root.title(f"Sistema R.P.E.D - Rol: {self.rol_usuario}")
         self.root.geometry("1200x700")
         self.root.configure(bg=self.tema['bg'])
 
-        # --- Layout principal ---
         main_frame = ttk.Frame(self.root)
         main_frame.pack(fill="both", expand=True)
 
-        # --- Sidebar (menú izquierdo) ---
         self.sidebar = tk.Frame(main_frame, width=220, bg=self.tema['bg'])
         self.sidebar.pack(side="left", fill="y")
 
-        # --- Área de contenido principal ---
         self.content_frame = tk.Frame(main_frame, bg=self.tema['bg'])
         self.content_frame.pack(side="right", fill="both", expand=True)
 
-        # --- Diccionario de frames ---
         self.frames = {}
 
-        # --- Instanciar todas las pantallas ---
-        self.frames["Pacientes"] = paciente_gui.PacienteGUI(self.content_frame, self.pacientes_dict)
-        self.frames["Exámenes"] = examen_gui.ExamenGUI(self.content_frame, self.pacientes_dict)
-        self.frames["Listado Derivación"] = listado_gui.ListadoGUI(self.content_frame, self.pacientes_dict)
-        self.frames["Conexión Equipos"] = coneccion_gui.ConexionGUI(self.content_frame)
-        self.frames["Dashboard"] = dashboard_gui.DashboardGUI(self.content_frame, self.pacientes_dict)
-        self.frames["Validación"] = validacion_gui.ValidacionGUI(self.content_frame, self.pacientes_dict)
-        self.frames["Historial Exámenes"] = historial_gui.HistorialGUI(self.content_frame)
-        self.frames["Historial Acciones"] = historial_acciones_gui.HistorialAccionesGUI(self.content_frame)
-        self.frames["Gestión Insumos"] = insumos_gui.InsumosGUI(self.content_frame)
-        self.frames["Emisión Resultados"] = emision_gui.EmisionLoteGUI(self.content_frame, self.pacientes_dict)
-        self.frames["Acerca de"] = about_gui.AboutTab(self.content_frame)  # <-- Corrección aquí
+        pantallas_disponibles = {
+            "Administrador": ["Dashboard", "Pacientes", "Exámenes", "Gestión Insumos", "Validación", "Historial Exámenes", "Historial Acciones", "Listado Derivación", "Conexión Equipos", "Emisión Resultados", "Acerca de"],
+            "Tecnólogo Médico": ["Dashboard", "Validación", "Historial Exámenes", "Acerca de"],
+            "Técnico de Laboratorio": ["Dashboard", "Pacientes", "Exámenes", "Gestión Insumos", "Acerca de"],
+            "Paciente": ["Historial Exámenes", "Acerca de"]
+        }
 
-        # --- Actualizar lista pacientes en exámenes ---
-        self.frames["Exámenes"].actualizar_lista_pacientes()
+        self.pantallas_disponibles = pantallas_disponibles.get(self.rol_usuario, [])
 
-        # --- Estilo botones barra lateral ---
+        if "Dashboard" in self.pantallas_disponibles:
+            self.frames["Dashboard"] = dashboard_gui.DashboardGUI(self.content_frame, self.pacientes_dict)
+        if "Pacientes" in self.pantallas_disponibles:
+            self.frames["Pacientes"] = paciente_gui.PacienteGUI(self.content_frame, self.pacientes_dict)
+        if "Exámenes" in self.pantallas_disponibles:
+            self.frames["Exámenes"] = examen_gui.ExamenGUI(self.content_frame, self.pacientes_dict)
+            self.frames["Exámenes"].actualizar_lista_pacientes()
+        if "Gestión Insumos" in self.pantallas_disponibles:
+            self.frames["Gestión Insumos"] = insumos_gui.InsumosGUI(self.content_frame)
+        if "Validación" in self.pantallas_disponibles:
+            self.frames["Validación"] = validacion_gui.ValidacionGUI(self.content_frame, self.pacientes_dict)
+        if "Historial Exámenes" in self.pantallas_disponibles:
+            self.frames["Historial Exámenes"] = historial_gui.HistorialGUI(self.content_frame)
+        if "Historial Acciones" in self.pantallas_disponibles:
+            self.frames["Historial Acciones"] = historial_acciones_gui.HistorialAccionesGUI(self.content_frame)
+        if "Listado Derivación" in self.pantallas_disponibles:
+            self.frames["Listado Derivación"] = listado_gui.ListadoGUI(self.content_frame, self.pacientes_dict)
+        if "Conexión Equipos" in self.pantallas_disponibles:
+            self.frames["Conexión Equipos"] = coneccion_gui.ConexionGUI(self.content_frame)
+        if "Emisión Resultados" in self.pantallas_disponibles:
+            self.frames["Emisión Resultados"] = emision_gui.EmisionLoteGUI(self.content_frame, self.pacientes_dict)
+        if "Acerca de" in self.pantallas_disponibles:
+            self.frames["Acerca de"] = about_gui.AboutTab(self.content_frame)
+
         estilo_btn = {
             "bg": self.tema['button_bg'],
             "fg": self.tema['button_fg'],
@@ -84,16 +98,21 @@ class App:
             "pady": 10
         }
 
-        # --- Botones menú lateral ---
         for name in self.frames.keys():
             btn = tk.Button(self.sidebar, text=name, command=lambda n=name: self.show_frame(n), **estilo_btn)
             btn.pack(pady=2)
 
-        # --- Botón para cambiar tema ---
+        # Botón cerrar sesión
+        cerrar_btn = tk.Button(self.sidebar, text="Cerrar Sesión", command=self.cerrar_sesion, **estilo_btn)
+        cerrar_btn.pack(pady=10)
+
         ttk.Button(self.sidebar, text="Cambiar Tema", command=self.cambiar_tema).pack(pady=10)
 
-        # --- Mostrar pantalla inicial ---
-        self.show_frame("Dashboard")
+        if self.frames:
+            self.show_frame(list(self.frames.keys())[0])
+        else:
+            tk.messagebox.showerror("Error", f"No hay pantallas disponibles para el rol: {self.rol_usuario}")
+            self.root.destroy()
 
         self.root.mainloop()
 
@@ -101,34 +120,36 @@ class App:
         for f in self.frames.values():
             if hasattr(f, 'get_frame'):
                 f.get_frame().pack_forget()
-        if hasattr(self.frames[name], 'get_frame'):
-            self.frames[name].get_frame().pack(fill="both", expand=True, padx=10, pady=10)
+        
+        frame = self.frames.get(name)
+        if frame:
+            frame_widget = frame.get_frame()
+            frame_widget.pack(fill="both", expand=True, padx=10, pady=10)
 
     def cambiar_tema(self):
-        if self.tema == modo_claro:
-            self.tema = modo_oscuro
-        else:
-            self.tema = modo_claro
-
-        # Actualizar el color de fondo y los botones
+        self.tema = modo_oscuro if self.tema == modo_claro else modo_claro
         self.root.configure(bg=self.tema['bg'])
         self.sidebar.configure(bg=self.tema['bg'])
-        self.content_frame.configure(bg=self.tema['bg'])
+        for widget in self.sidebar.winfo_children():
+            widget.configure(bg=self.tema['button_bg'], fg=self.tema['button_fg'])
+        for frame in self.frames.values():
+            if hasattr(frame, 'get_frame'):
+                frame.get_frame().configure(bg=self.tema['bg'])
 
-        # Cambiar los botones
-        for btn in self.sidebar.winfo_children():
-            btn.configure(bg=self.tema['button_bg'], fg=self.tema['button_fg'])
+    def cerrar_sesion(self):
+        respuesta = tk.messagebox.askyesno("Cerrar Sesión", "¿Seguro que quieres cerrar sesión?")
+        if respuesta:
+            self.root.destroy()
+            # Llama nuevamente al login
+            from gui import login_gui
+            login_gui.login_window(lambda usuario: App(usuario))
 
-        # Cambiar las etiquetas y otras interfaces
-        # Actualiza los frames de contenido según el nuevo tema
-        for f in self.frames.values():
-            if hasattr(f, 'get_frame'):
-                f.get_frame().configure(bg=self.tema['bg'])
-
-        # Cambiar el texto del botón de cambiar tema
-        btn = self.sidebar.winfo_children()[-1]  # El último botón es el de cambiar tema
-        btn.config(text="Modo Claro" if self.tema == modo_oscuro else "Modo Oscuro")
 
 # --- Lanzar login ---
 if __name__ == "__main__":
-    login_gui.login_window(lambda: App())  # Lanzar la aplicación después del login
+    from gui import login_gui
+
+    def iniciar_app_con_usuario(usuario):
+        App(usuario)
+
+    login_gui.login_window(iniciar_app_con_usuario)
